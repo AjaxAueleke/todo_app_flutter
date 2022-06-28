@@ -41,6 +41,7 @@ class _HomePage extends State<HomePage> {
 
   Widget _listView() {
     List tasks = _box!.values.toList();
+    print(tasks);
     return ListView.builder(
       itemBuilder: (BuildContext ctx, int n) {
         var task = Task.fromMap(tasks[n]);
@@ -61,6 +62,16 @@ class _HomePage extends State<HomePage> {
                 : Icons.check_box_outline_blank,
             color: Colors.red,
           ),
+          onTap: () {
+            task.done = !task.done;
+            _box!.putAt(n, task.toMap());
+
+            setState(() {});
+          },
+          onLongPress: () {
+            _box!.deleteAt(n);
+            setState(() {});
+          },
         );
       },
       itemCount: tasks.length,
@@ -83,13 +94,22 @@ class _HomePage extends State<HomePage> {
         return AlertDialog(
           title: const Text('Add Task'),
           content: TextField(
-            onSubmitted: (value) {},
+            onSubmitted: (value) {
+              if (_newTask != null) {
+                var task = Task(
+                  content: _newTask!,
+                  timestamp: DateTime.now(),
+                  done: false,
+                );
+                _box!.add(task.toMap());
+                setState(() {
+                  _newTask = null;
+                  Navigator.pop(context);
+                });
+              }
+            },
             onChanged: (value) {
-              setState(
-                () {
-                  _newTask = value;
-                },
-              );
+              _newTask = value;
             },
           ),
         );
@@ -101,7 +121,7 @@ class _HomePage extends State<HomePage> {
     return FutureBuilder(
       future: Hive.openBox('tasks'),
       builder: (BuildContext _ctx, AsyncSnapshot _snapshot) {
-        if (_snapshot.connectionState == ConnectionState.done) {
+        if (_snapshot.hasData) {
           _box = _snapshot.data;
           return _listView();
         } else {
